@@ -133,9 +133,17 @@ def dashboard():
     cursor.execute(income_query)
     income = cursor.fetchall()
 
+     # Example: Preparing data for the chart
+    # For simplicity, assuming you have a way to calculate total expenses and income per month
+    chart_data = {
+        'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        'expenses': [1200, 1300, 1100, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200],  # Example data
+        'income': [2200, 2300, 2100, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200]  # Example data
+    }
+
     conn.close()
 
-    return render_template('dashboard.html', expenses=expenses, income=income)
+    return render_template('dashboard.html', expenses=expenses, income=income, chart_data=chart_data)
 
 
 
