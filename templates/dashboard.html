@@ -9,6 +9,36 @@
 </head>
 <body>
     {% include 'navbar.html' %}
+    <form method="POST" action="/dashboard">
+      <!-- Month Dropdown -->
+    <label for="month">Month:</label>
+    <select name="month" id="month">
+        <option value="Jan">January</option>
+        <option value="Feb">February</option>
+        <option value="Mar">March</option>
+        <option value="Apr">April</option>
+        <option value="May">May</option>
+        <option value="Jun">June</option>
+        <option value="Jul">July</option>
+        <option value="Aug">August</option>
+        <option value="Sep">September</option>
+        <option value="Oct">October</option>
+        <option value="Nov">November</option>
+        <option value="Dec">December</option>
+        <!-- ... other months ... -->
+    </select>
+
+    <!-- Year Dropdown -->
+    <label for="year">Year:</label>
+    <select name="year" id="year">
+        <!-- Add options for each year -->
+        <option value="23">2023</option>
+        <option value="22">2022</option>
+        <!-- ... other years, adjust the value attribute as needed ... -->
+    </select>
+    
+        <input type="submit" value="Filter">
+    </form>
     <div class="container">
         <div class="expenses">
             <h2>Expenses</h2>

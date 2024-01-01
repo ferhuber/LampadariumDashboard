@@ -105,22 +105,39 @@ def add_transaction():
         return redirect(url_for('show_transactions'))
 
 # Route to dasboard
-@app.route('/dashboard')
+@app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     conn = sqlite3.connect('database/transactions.db')
     cursor = conn.cursor()
 
-    # Query for all transactions marked as 'Expense'
-    cursor.execute("SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Expense%'")
+    # Base queries
+    expense_query = "SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Expense%'"
+    income_query = "SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Income%'"
+
+    if request.method == 'POST':
+        month = request.form.get('month')  # Expecting 'Jan', 'Feb', 'Mar', etc.
+        year = request.form.get('year')    # Expecting '23' for 2023, for example
+
+        if month and year:
+            expense_query += f" AND SUBSTR(DATE, 4, 3) = '{month}' AND SUBSTR(DATE, 8, 2) = '{year}'"
+            income_query += f" AND SUBSTR(DATE, 4, 3) = '{month}' AND SUBSTR(DATE, 8, 2) = '{year}'"
+
+
+            # Print the final SQL queries for debugging
+    print("Expense Query:", expense_query)
+    print("Income Query:", income_query)
+
+    cursor.execute(expense_query)
     expenses = cursor.fetchall()
 
-    # Query for all transactions marked as 'Income'
-    cursor.execute("SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Income%'")
+    cursor.execute(income_query)
     income = cursor.fetchall()
 
     conn.close()
 
     return render_template('dashboard.html', expenses=expenses, income=income)
+
+
 
 
 
