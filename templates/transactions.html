@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <h1>Transactions</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>ID</th>
+                <th>Transaction</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Tax</th>
+                <th>Shipping</th>
+                <th>Fees</th>
+                <th>Net Amount</th>
+                <th>Description</th>
+                <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+            {% for transaction in transactions %}
+            <tr>
+                <td>{{ transaction[0] }}</td> <!-- Assuming 'Date' is the first element -->
+                <td>{{ transaction[1] }}</td> <!-- Replace indices as per the order in your table -->
+                <td>{{ transaction[2] }}</td>
+                <td>{{ transaction[3] }}</td>
+                <td>{{ transaction[4] }}</td>
+                <td>{{ transaction[5] }}</td>
+                <td>{{ transaction[6] }}</td>
+                <td>{{ transaction[7] }}</td>
+                <td>{{ transaction[8] }}</td>
+                <td>{{ transaction[9] }}</td>
+                <td>{{ transaction[10] }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

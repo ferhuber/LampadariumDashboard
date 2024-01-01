@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Contact Page</title>
+</head>
+<body>
+    {% include 'navbar.html' %}
+    <div class="container">
+        <div class="expenses">
+            <h2>Expenses</h2>
+            <table>
+                <!-- Table headers for expenses -->
+                <tr>
+                    <th>Date</th>
+                    <th>ID</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                </tr>
+                <!-- Table data for expenses -->
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense[0] }}</td>
+                    <td>{{ expense[1] }}</td>
+                    <td>{{ expense[3] }}</td>
+                    <td>{{ expense[4] }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <div class="income">
+            <h2>Income</h2>
+            <table>
+                <!-- Table headers for income -->
+                <tr>
+                    <th>Date</th>
+                    <th>ID</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                </tr>
+                <!-- Table data for income -->
+                {% for inc in income %}
+                <tr>
+                    <td>{{ inc[0] }}</td>
+                    <td>{{ inc[1] }}</td>
+                    <td>{{ inc[3] }}</td>
+                    <td>{{ inc[4] }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</body>
+</html>
