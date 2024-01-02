@@ -114,6 +114,10 @@ def dashboard():
     base_expense_query = "SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Expense%'"
     base_income_query = "SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Income%'"
 
+    # Initialize totals
+    total_expenses = 0
+    total_income = 0
+
     specific_month_selected = False
     selected_month = None
 
@@ -153,6 +157,8 @@ def dashboard():
     cursor.execute(income_query)
     income = cursor.fetchall()
 
+    
+
     # Initialize arrays for chart data
     expenses_by_month = [0] * 12
     income_by_month = [0] * 12
@@ -170,6 +176,14 @@ def dashboard():
 
     conn.close()
 
+    # Summing the totals for expenses and income
+    total_expenses = sum(expenses_by_month)
+    total_income = sum(income_by_month)
+    profit = total_income - total_expenses
+
+    print(total_expenses)
+    print(total_income)
+
     # Preparing chart data with real values
     chart_data = {
         'months': months,
@@ -177,7 +191,8 @@ def dashboard():
         'income': income_by_month
     }
 
-    return render_template('dashboard.html', expenses=expenses, income=income, chart_data=chart_data, specific_month_selected=specific_month_selected, selected_month=selected_month)
+    return render_template('dashboard.html', expenses=expenses, income=income, chart_data=chart_data, specific_month_selected=specific_month_selected, selected_month=selected_month,total_expenses=total_expenses, 
+                                             total_income=total_income, profit=profit)
 
 if __name__ == '__main__':
     app.run(debug=True)

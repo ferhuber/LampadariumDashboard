@@ -1,11 +1,21 @@
 document.addEventListener('DOMContentLoaded', function() {
     var ctx = document.getElementById('myChart').getContext('2d');
 
-    // If a specific month is selected or the chart context is not available, hide the chart
     if (!ctx || selectedMonth !== null) {
         document.getElementById('myChart').style.display = 'none';
-        return;
-    }
+        document.getElementById('totals').style.display = 'none';
+
+    }else {
+            // Display the chart and totals if no specific month is selected
+            document.getElementById('myChart').style.display = 'block';
+            document.getElementById('totals').style.display = 'block';
+    
+}
+// Display total expenses, income, and profit
+document.getElementById('total-expenses').textContent = '$' +  totalExpenses.toFixed(2);
+document.getElementById('total-income').textContent = '$' + totalIncome.toFixed(2);
+document.getElementById('profit').textContent = profit.toFixed(2);
+
 
     // Initialize the chart when a specific month is not selected
     var myChart = new Chart(ctx, {

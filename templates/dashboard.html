@@ -48,6 +48,14 @@
     
         <input type="submit" value="Filter">
         <input type="submit" name="reset" value="Show All">
+
+
+        <div id="totals" style="display: none;">
+            <p>Total Expenses: <span id="total-expenses"></span></p>
+            <p>Total Income: <span id="total-income"></span></p>
+            <p>Profit: <span id="profit"></span></p>
+        </div>
+
     </form>
 
 <!-- Canvas for Chart -->
@@ -60,6 +68,9 @@
 <script type="text/javascript">
     var chartData = {{ chart_data | tojson | safe }};
     var selectedMonth = {{ selected_month | tojson }};
+    var totalExpenses = {{ total_expenses | tojson }};
+    var totalIncome = {{ total_income | tojson }};
+    var profit = {{ profit | tojson }};
 </script>
 
 <!-- Main JavaScript file -->
