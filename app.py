@@ -70,32 +70,86 @@ def allowed_file(filename):
 
 
 # Route to display transactions
+@app.route('/transactions')
+def show_transactions():
+    conn = sqlite3.connect('database/transactions.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM transactions ")
+    transactions = cursor.fetchall()
+
+    conn.close()
+    return render_template('transactions.html', transactions=transactions)
+
+# Route to add a new transaction (example of a form submission)
+@app.route('/add-transaction', methods=['POST'])
+def add_transaction():
+    if request.method == 'POST':
+        date = request.form['date']
+        transaction = request.form['transaction']
+        category = request.form['category']
+        amount = request.form['amount']
+        # ... get other fields similarly
+
+        conn = sqlite3.connect('database/transactions.db')
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            INSERT INTO transactions (date, transaction, category, amount, ...)
+            VALUES (?, ?, ?, ?, ...)
+        """, (date, transaction, category, amount, ...))
+
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for('show_transactions'))
+
+# Route to dashboard
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     conn = sqlite3.connect('database/transactions.db')
     cursor = conn.cursor()
 
-    # Base queries for expenses and income
-    expense_query = "SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Expense%'"
-    income_query = "SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Income%'"
+    # Initialize the base queries for expenses and income
+    base_expense_query = "SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Expense%'"
+    base_income_query = "SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Income%'"
+
+    specific_month_selected = False
+    selected_month = None
 
     if request.method == 'POST':
-        # Check if the reset button was pressed
+        month = request.form.get('month')
+        year = request.form.get('year')
+        
         if 'reset' in request.form:
-            # Reset button was pressed; skip adding any filters to show all data
-            pass
-        else:
-            month = request.form.get('month')  # e.g., 'Jan'
-            year = request.form.get('year')    # e.g., '23'
-            if month and year:
-                # Add filters for month and year
-                month_year_filter = f" AND SUBSTR(DATE, 4, 3) = '{month}' AND SUBSTR(DATE, 8, 2) = '{year}'"
-                expense_query += month_year_filter
-                income_query += month_year_filter
+            # Reset button was pressed; show data for all months
+            specific_month_selected = False
+            expense_query = base_expense_query
+            income_query = base_income_query
+            selected_month = None
 
+            print(selected_month)
+        elif month and year:
+            # A specific month is selected
+            specific_month_selected = True
+            selected_month = month
+
+            # Apply filters only for the selected month
+            month_year_filter = f" AND SUBSTR(DATE, 4, 3) = '{month}' AND SUBSTR(DATE, 8, 2) = '{year}'"
+            expense_query = base_expense_query + month_year_filter
+            income_query = base_income_query + month_year_filter
+        else:
+            # No specific month selected, use base queries
+            expense_query = base_expense_query
+            income_query = base_income_query
+    else:
+        # Default case when the page is first loaded
+        expense_query = base_expense_query
+        income_query = base_income_query
+
+    # Execute the queries for expenses and income
     cursor.execute(expense_query)
     expenses = cursor.fetchall()
-
     cursor.execute(income_query)
     income = cursor.fetchall()
 
@@ -123,7 +177,10 @@ def dashboard():
         'income': income_by_month
     }
 
-    return render_template('dashboard.html', expenses=expenses, income=income, chart_data=chart_data)
+    return render_template('dashboard.html', expenses=expenses, income=income, chart_data=chart_data, specific_month_selected=specific_month_selected, selected_month=selected_month)
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 if __name__ == '__main__':
     app.run(debug=True)

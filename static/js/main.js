@@ -1,10 +1,13 @@
-// main.js
 document.addEventListener('DOMContentLoaded', function() {
-    console.log(chartData);  // Check the data
     var ctx = document.getElementById('myChart').getContext('2d');
-    if (!ctx) return;
-    
-    // Use the global chartData variable
+
+    // If a specific month is selected or the chart context is not available, hide the chart
+    if (!ctx || selectedMonth !== null) {
+        document.getElementById('myChart').style.display = 'none';
+        return;
+    }
+
+    // Initialize the chart when a specific month is not selected
     var myChart = new Chart(ctx, {
         type: 'bar',
         data: {

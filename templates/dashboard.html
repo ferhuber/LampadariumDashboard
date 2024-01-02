@@ -51,13 +51,15 @@
     </form>
 
 <!-- Canvas for Chart -->
-<div>
+<div id="chartContainer">
     <canvas id="myChart"></canvas>
 </div>
+
 
 <!-- Script for setting chart data -->
 <script type="text/javascript">
     var chartData = {{ chart_data | tojson | safe }};
+    var selectedMonth = {{ selected_month | tojson }};
 </script>
 
 <!-- Main JavaScript file -->
