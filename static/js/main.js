@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log(chartData);  // Check the data
     var ctx = document.getElementById('myChart').getContext('2d');
+    if (!ctx) return;
     
     // Use the global chartData variable
     var myChart = new Chart(ctx, {

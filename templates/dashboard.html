@@ -47,9 +47,7 @@
     </select>
     
         <input type="submit" value="Filter">
-        <div>
-            <canvas id="myChart"></canvas>
-        </div>
+        <input type="submit" name="reset" value="Show All">
     </form>
 
 <!-- Canvas for Chart -->
@@ -57,9 +55,12 @@
     <canvas id="myChart"></canvas>
 </div>
 
+<!-- Script for setting chart data -->
 <script type="text/javascript">
     var chartData = {{ chart_data | tojson | safe }};
 </script>
+
+<!-- Main JavaScript file -->
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
 

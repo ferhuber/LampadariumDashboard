@@ -70,62 +70,28 @@ def allowed_file(filename):
 
 
 # Route to display transactions
-@app.route('/transactions')
-def show_transactions():
-    conn = sqlite3.connect('database/transactions.db')
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM transactions ")
-    transactions = cursor.fetchall()
-
-    conn.close()
-    return render_template('transactions.html', transactions=transactions)
-
-# Route to add a new transaction (example of a form submission)
-@app.route('/add-transaction', methods=['POST'])
-def add_transaction():
-    if request.method == 'POST':
-        date = request.form['date']
-        transaction = request.form['transaction']
-        category = request.form['category']
-        amount = request.form['amount']
-        # ... get other fields similarly
-
-        conn = sqlite3.connect('database/transactions.db')
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            INSERT INTO transactions (date, transaction, category, amount, ...)
-            VALUES (?, ?, ?, ?, ...)
-        """, (date, transaction, category, amount, ...))
-
-        conn.commit()
-        conn.close()
-
-        return redirect(url_for('show_transactions'))
-
-# Route to dasboard
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     conn = sqlite3.connect('database/transactions.db')
     cursor = conn.cursor()
 
-    # Base queries
+    # Base queries for expenses and income
     expense_query = "SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Expense%'"
     income_query = "SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Income%'"
 
     if request.method == 'POST':
-        month = request.form.get('month')  # Expecting 'Jan', 'Feb', 'Mar', etc.
-        year = request.form.get('year')    # Expecting '23' for 2023, for example
-
-        if month and year:
-            expense_query += f" AND SUBSTR(DATE, 4, 3) = '{month}' AND SUBSTR(DATE, 8, 2) = '{year}'"
-            income_query += f" AND SUBSTR(DATE, 4, 3) = '{month}' AND SUBSTR(DATE, 8, 2) = '{year}'"
-
-
-            # Print the final SQL queries for debugging
-    print("Expense Query:", expense_query)
-    print("Income Query:", income_query)
+        # Check if the reset button was pressed
+        if 'reset' in request.form:
+            # Reset button was pressed; skip adding any filters to show all data
+            pass
+        else:
+            month = request.form.get('month')  # e.g., 'Jan'
+            year = request.form.get('year')    # e.g., '23'
+            if month and year:
+                # Add filters for month and year
+                month_year_filter = f" AND SUBSTR(DATE, 4, 3) = '{month}' AND SUBSTR(DATE, 8, 2) = '{year}'"
+                expense_query += month_year_filter
+                income_query += month_year_filter
 
     cursor.execute(expense_query)
     expenses = cursor.fetchall()
@@ -133,22 +99,31 @@ def dashboard():
     cursor.execute(income_query)
     income = cursor.fetchall()
 
-     # Example: Preparing data for the chart
-    # For simplicity, assuming you have a way to calculate total expenses and income per month
-    chart_data = {
-        'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        'expenses': [1200, 1300, 1100, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200],  # Example data
-        'income': [2200, 2300, 2100, 2400, 2500, 2600, 2700, 2800, 2900, 3000, 3100, 3200]  # Example data
-    }
+    # Initialize arrays for chart data
+    expenses_by_month = [0] * 12
+    income_by_month = [0] * 12
+
+    # Query to fetch monthly expense and income data
+    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    for i, month_str in enumerate(months, start=1):
+        # Query for expenses
+        cursor.execute("SELECT SUM(CAST(REPLACE(amount, ',', '') AS REAL)) FROM transactions WHERE \"TRANSACTION\" LIKE '%Expense%' AND SUBSTR(date, 4, 3) = ?", (month_str,))
+        expenses_by_month[i-1] = cursor.fetchone()[0] or 0
+
+        # Query for income
+        cursor.execute("SELECT SUM(CAST(REPLACE(amount, ',', '') AS REAL)) FROM transactions WHERE \"TRANSACTION\" LIKE '%Income%' AND SUBSTR(date, 4, 3) = ?", (month_str,))
+        income_by_month[i-1] = cursor.fetchone()[0] or 0
 
     conn.close()
 
+    # Preparing chart data with real values
+    chart_data = {
+        'months': months,
+        'expenses': expenses_by_month,
+        'income': income_by_month
+    }
+
     return render_template('dashboard.html', expenses=expenses, income=income, chart_data=chart_data)
-
-
-
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
