@@ -14,7 +14,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // Display total expenses, income, and profit
 document.getElementById('total-expenses').textContent = '$' +  totalExpenses.toFixed(2);
 document.getElementById('total-income').textContent = '$' + totalIncome.toFixed(2);
-document.getElementById('profit').textContent = profit.toFixed(2);
+// Calculate and display profit as a percentage of total income
+var profitPercentage = totalIncome > 0 ? ((profit / totalIncome) * 100) : 0;
+document.getElementById('profit').textContent = profitPercentage.toFixed(2) + '%';
 
 
     // Initialize the chart when a specific month is not selected
