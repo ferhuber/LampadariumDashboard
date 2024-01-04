@@ -159,22 +159,24 @@ def dashboard():
     base_expense_query = "SELECT * FROM quickbooks_transactions WHERE transaction_type LIKE '%Expense%'"
     base_income_query = "SELECT * FROM quickbooks_transactions WHERE transaction_type LIKE '%Deposit%'"
 
-  
-      # Initialize variables
+    # Initialize variables
     total_expenses = 0
     total_income = 0
     specific_month_selected = False
     selected_month = None
     expense_query = base_expense_query
     income_query = base_income_query
+    aggregated_expenses = []  # For aggregated expenses by Name for a selected month
 
+    
+
+   
+    
     if request.method == 'POST':
         month = request.form.get('month')
         year = request.form.get('year')
-        print(f"Month: {month}, Year: {year}")
 
         if 'reset' in request.form:
-            # Reset button was pressed; show data for all months
             specific_month_selected = False
             selected_month = None
         elif month and year:
@@ -183,12 +185,19 @@ def dashboard():
             selected_month = month
 
             # Apply filters only for the selected month
-            # Adjust SUBSTR indexes based on your date format, assuming DD/MM/YYYY
-            month_year_filter = f" AND CAST(SUBSTR(date, 4, 2) AS INTEGER) = {month} AND SUBSTR(date, 7, 4) = '{year}'"
+            month_year_filter = f" AND SUBSTR(date, 4, 2) = '{month}' AND SUBSTR(date, 7, 4) = '{year}'"
+            aggregate_query = f"""
+                SELECT Name, SUM(CAST(REPLACE(Amount, ',', '') AS REAL)) as TotalAmount
+                FROM quickbooks_transactions
+                WHERE transaction_type LIKE '%Expense%' {month_year_filter}
+                GROUP BY Name
+            """
+            cursor.execute(aggregate_query)
+            aggregated_expenses = cursor.fetchall()
+            print(f"aggregate:", aggregated_expenses)
+
             expense_query += month_year_filter
             income_query += month_year_filter
-            print(f"Expense Query: {expense_query}")
-            print(f"Income Query: {income_query}")
 
     # Execute the queries for expenses and income
     cursor.execute(expense_query)
@@ -196,13 +205,11 @@ def dashboard():
     cursor.execute(income_query)
     income = cursor.fetchall()
 
-    
-
     # Initialize arrays for chart data
     expenses_by_month = [0] * 12
     income_by_month = [0] * 12
 
-  # Query to fetch monthly expense and income data
+    # Query to fetch monthly expense and income data
     months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
     for i, month_str in enumerate(months, start=1):
         # Query for expenses
@@ -214,6 +221,10 @@ def dashboard():
         income_by_month[i-1] = cursor.fetchone()[0] or 0
 
     conn.close()
+
+    # Calculate total expenses and income
+    total_expenses = sum(expenses_by_month)
+    total_income = sum(income_by_month)
 
     # Summing the totals for expenses and income
     total_expenses = sum(expenses_by_month)
@@ -227,7 +238,10 @@ def dashboard():
         'income': income_by_month
     }
 
-    return render_template('dashboard.html', expenses=expenses, income=income, chart_data=chart_data, specific_month_selected=specific_month_selected, selected_month=selected_month, total_expenses=total_expenses, total_income=total_income, profit=profit)
+    labels = [expense[0] for expense in aggregated_expenses]
+    data = [expense[1] for expense in aggregated_expenses]
+
+    return render_template('dashboard.html', expenses=expenses, income=income, chart_data=chart_data, specific_month_selected=specific_month_selected, selected_month=selected_month, total_expenses=total_expenses, total_income=total_income, profit=profit,aggregated_expenses=aggregated_expenses,aggregatedExpensesLabels=labels, aggregatedExpensesData=data)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -72,6 +72,8 @@
         var totalExpenses = {{ total_expenses | tojson }};
         var totalIncome = {{ total_income | tojson }};
         var profit = {{ profit | tojson }};
+        var aggregatedExpensesLabels = {{ aggregatedExpensesLabels | tojson }};
+        var aggregatedExpensesData = {{ aggregatedExpensesData | tojson }};
     </script>
 
     <!-- Main JavaScript file -->
@@ -81,7 +83,7 @@
 
 
     <div class="container">
-        <div class="expenses">
+        <div id="expenses">
             <h2>Expenses</h2>
             <table>
                 <!-- Table headers for expenses -->
@@ -103,28 +105,61 @@
             </table>
         </div>
 
-        <div class="income">
-            <h2>Income</h2>
-            <table>
-                <!-- Table headers for income -->
-                <tr>
-                    <th>Date</th>
-                    <th>Name</th>
-                    <th>Description</th>
-                    <th>Amount</th>
-                </tr>
-                <!-- Table data for income -->
-                {% for inc in income %}
-                <tr>
-                    <td>{{ inc[0] }}</td>
-                    <td>{{ inc[8] }}</td>
-                    <td>{{ inc[6] }}</td>
-                    <td>{{ inc[9] }}</td>
-                </tr>
-                {% endfor %}
-            </table>
+
+        <div class="container">
+            <div>
+            <div>
+                <p>Pie Chart</p>
+                {% if specific_month_selected %}
+                <!-- Other dashboard elements -->
+    
+                <canvas id="expensesPieChart" width="400" height="400"></canvas>
+                {% endif %}
+            </div>
+            <div class="expenses_month">
+                {% if specific_month_selected %}
+                <h3>Aggregated Expenses for {{ selected_month }}</h3>
+                <table>
+                    <tr>
+                        <th>Name</th>
+                        <th>Total Amount</th>
+                    </tr>
+                    {% for expense in aggregated_expenses %}
+                    <tr>
+                        <td>{{ expense[0] }}</td> <!-- Name -->
+                        <td>{{ expense[1] | round(2) }}</td> <!-- Total Amount -->
+                    </tr>
+                    {% endfor %}
+                </table>
+                {% endif %}
+            </div>
+            </div>
+
+            <div id="income">
+                <h2>Income</h2>
+                <table>
+                    <!-- Table headers for income -->
+                    <tr>
+                        <th>Date</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                    </tr>
+                    <!-- Table data for income -->
+                    {% for inc in income %}
+                    <tr>
+                        <td>{{ inc[0] }}</td>
+                        <td>{{ inc[8] }}</td>
+                        <td>{{ inc[6] }}</td>
+                        <td>{{ inc[9] }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
         </div>
-    </div>
+
+
+       
 </body>
 
 </html>
