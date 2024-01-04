@@ -107,15 +107,6 @@
 
 
         <div class="container">
-            <div>
-            <div>
-                <p>Pie Chart</p>
-                {% if specific_month_selected %}
-                <!-- Other dashboard elements -->
-    
-                <canvas id="expensesPieChart" width="400" height="400"></canvas>
-                {% endif %}
-            </div>
             <div class="expenses_month">
                 {% if specific_month_selected %}
                 <h3>Aggregated Expenses for {{ selected_month }}</h3>
@@ -132,7 +123,6 @@
                     {% endfor %}
                 </table>
                 {% endif %}
-            </div>
             </div>
 
             <div id="income">
@@ -159,7 +149,14 @@
         </div>
 
 
-       
+        <div>
+            <p>Pie Chart</p>
+            {% if specific_month_selected %}
+            <!-- Other dashboard elements -->
+
+            <canvas id="expensesPieChart" width="400" height="400"></canvas>
+            {% endif %}
+        </div>
 </body>
 
 </html>

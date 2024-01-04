@@ -163,6 +163,7 @@ def dashboard():
     total_expenses = 0
     total_income = 0
     specific_month_selected = False
+    specific_year_selected = False
     selected_month = None
     expense_query = base_expense_query
     income_query = base_income_query
