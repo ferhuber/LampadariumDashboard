@@ -1,51 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-   
-    
-    
-    
-    
+
+
+
+
+
 
     <title>Dashboard Page</title>
 </head>
+
 <body>
     {% include 'navbar.html' %}
 
 
     <form method="POST" action="/dashboard">
-      <!-- Month Dropdown -->
-    <label for="month">Month:</label>
-    <select name="month" id="month">
-        <option value="Jan">January</option>
-        <option value="Feb">February</option>
-        <option value="Mar">March</option>
-        <option value="Apr">April</option>
-        <option value="May">May</option>
-        <option value="Jun">June</option>
-        <option value="Jul">July</option>
-        <option value="Aug">August</option>
-        <option value="Sep">September</option>
-        <option value="Oct">October</option>
-        <option value="Nov">November</option>
-        <option value="Dec">December</option>
-        <!-- ... other months ... -->
-    </select>
+        <!-- Month Dropdown -->
+        <label for="month">Month:</label>
+        <select name="month" id="month">
+            <option value="01">January</option>
+            <option value="02">February</option>
+            <option value="03">March</option>
+            <option value="04">April</option>
+            <option value="05">May</option>
+            <option value="06">June</option>
+            <option value="07">July</option>
+            <option value="08">August</option>
+            <option value="09">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+        </select>
 
-    <!-- Year Dropdown -->
-    <label for="year">Year:</label>
-    <select name="year" id="year">
-        <!-- Add options for each year -->
-        <option value="23">2023</option>
-        <option value="22">2022</option>
-        <!-- ... other years, adjust the value attribute as needed ... -->
-    </select>
-    
+        <!-- Year Dropdown -->
+        <label for="year">Year:</label>
+        <select name="year" id="year">
+            <!-- Add options for each year -->
+            <option value="2023">2023</option>
+            <option value="2022">2022</option>
+            <!-- ... other years, adjust the value attribute as needed ... -->
+        </select>
+
         <input type="submit" value="Filter">
         <input type="submit" name="reset" value="Show All">
 
@@ -58,23 +59,23 @@
 
     </form>
 
-<!-- Canvas for Chart -->
-<div id="chartContainer">
-    <canvas id="myChart"></canvas>
-</div>
+    <!-- Canvas for Chart -->
+    <div id="chartContainer">
+        <canvas id="myChart"></canvas>
+    </div>
 
 
-<!-- Script for setting chart data -->
-<script type="text/javascript">
-    var chartData = {{ chart_data | tojson | safe }};
-    var selectedMonth = {{ selected_month | tojson }};
-    var totalExpenses = {{ total_expenses | tojson }};
-    var totalIncome = {{ total_income | tojson }};
-    var profit = {{ profit | tojson }};
-</script>
+    <!-- Script for setting chart data -->
+    <script type="text/javascript">
+        var chartData = {{ chart_data | tojson | safe }};
+        var selectedMonth = {{ selected_month | tojson }};
+        var totalExpenses = {{ total_expenses | tojson }};
+        var totalIncome = {{ total_income | tojson }};
+        var profit = {{ profit | tojson }};
+    </script>
 
-<!-- Main JavaScript file -->
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- Main JavaScript file -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 
 
 
@@ -86,7 +87,7 @@
                 <!-- Table headers for expenses -->
                 <tr>
                     <th>Date</th>
-                    <th>ID</th>
+                    <th>Name</th>
                     <th>Description</th>
                     <th>Amount</th>
                 </tr>
@@ -94,9 +95,9 @@
                 {% for expense in expenses %}
                 <tr>
                     <td>{{ expense[0] }}</td>
-                    <td>{{ expense[1] }}</td>
-                    <td>{{ expense[3] }}</td>
-                    <td>{{ expense[4] }}</td>
+                    <td>{{ expense[8] }}</td>
+                    <td>{{ expense[6] }}</td>
+                    <td>{{ expense[9] }}</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -108,7 +109,7 @@
                 <!-- Table headers for income -->
                 <tr>
                     <th>Date</th>
-                    <th>ID</th>
+                    <th>Name</th>
                     <th>Description</th>
                     <th>Amount</th>
                 </tr>
@@ -116,13 +117,14 @@
                 {% for inc in income %}
                 <tr>
                     <td>{{ inc[0] }}</td>
-                    <td>{{ inc[1] }}</td>
-                    <td>{{ inc[3] }}</td>
-                    <td>{{ inc[4] }}</td>
+                    <td>{{ inc[8] }}</td>
+                    <td>{{ inc[6] }}</td>
+                    <td>{{ inc[9] }}</td>
                 </tr>
                 {% endfor %}
             </table>
         </div>
     </div>
 </body>
+
 </html>
