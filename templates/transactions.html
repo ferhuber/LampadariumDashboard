@@ -13,36 +13,35 @@
     <table>
         <thead>
             <tr>
+                <th>Account</th>
                 <th>Date</th>
-                <th>ID</th>
-                <th>Transaction</th>
-                <th>Category</th>
-                <th>Amount</th>
-                <th>Tax</th>
-                <th>Shipping</th>
-                <th>Fees</th>
-                <th>Net Amount</th>
+                <th>Transaction Type</th>
+                <th>Number</th>
+                <th>Name</th>
+                <th>Location</th>
+                <th>Class</th>
                 <th>Description</th>
-                <th>Remarks</th>
+                <th>Amount</th>
+                <th>Balance</th>
+                <th>Posting</th>
             </tr>
         </thead>
         <tbody>
-            
             {% for transaction in transactions %}
             <tr>
-                <td>{{ transaction[0] }}</td> <!-- Assuming 'Date' is the first element -->
-                <td>{{ transaction[1] }}</td> <!-- Replace indices as per the order in your table -->
-                <td>{{ transaction[2] }}</td>
-                <td>{{ transaction[3] }}</td>
-                <td>{{ transaction[4] }}</td>
-                <td>{{ transaction[5] }}</td>
-                <td>{{ transaction[6] }}</td>
-                <td>{{ transaction[7] }}</td>
-                <td>{{ transaction[8] }}</td>
-                <td>{{ transaction[9] }}</td>
-                <td>{{ transaction[10] }}</td>
+                <td>{{ transaction['account'] }}</td>
+                <td>{{ transaction['date'] }}</td>
+                <td>{{ transaction['transaction_type'] }}</td>
+                <td>{{ transaction['number'] }}</td>
+                <td>{{ transaction['name'] }}</td>
+                <td>{{ transaction['location'] }}</td>
+                <td>{{ transaction['class'] }}</td>
+                <td>{{ transaction['description'] }}</td>
+                <td>{{ transaction['amount'] }}</td>
+                <td>{{ transaction['balance'] }}</td>
+                <td>{{ transaction['posting'] }}</td>
             </tr>
-        {% endfor %}
+            {% endfor %}
         </tbody>
     </table>
 </body>

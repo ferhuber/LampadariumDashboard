@@ -1,31 +1,27 @@
 import sqlite3
 
-# Connect to SQLite database (this will create the database file if it doesn't exist)
-conn = sqlite3.connect('database/transactions.db')
+# Connect to SQLite database
+conn = sqlite3.connect('quickbooks.db')
 
-# Create a cursor object using the cursor method
+# Create a cursor object
 cursor = conn.cursor()
 
-# Create table with the necessary columns
+# Create a new table for QuickBooks transactions with the updated column names
 cursor.execute('''
-CREATE TABLE transactions (
+CREATE TABLE IF NOT EXISTS quickbooks_transactions (
     date TEXT,
-    id INTEGER PRIMARY KEY,
-    "transaction" TEXT,  -- Enclosed in double quotes
-    category TEXT,
-    amount REAL,
-    tax REAL,
-    shipping REAL,
-    fees REAL,
-    net_amount REAL,
+    transaction_type TEXT,
+    number TEXT,
+    posting TEXT,
+    name TEXT,
+    location TEXT,
     description TEXT,
-    remarks TEXT
+    account TEXT,
+    related_account TEXT,
+    amount REAL
 )
 ''')
 
-
-# Commit the transaction
+# Commit the changes and close the connection
 conn.commit()
-
-# Close the connection
 conn.close()

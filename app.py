@@ -39,30 +39,46 @@ def contact():
     return render_template('contact.html')
 
 # Route to upload CSV file
+
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
     form = UploadForm()
     if form.validate_on_submit():
         file = form.file.data
-        df = pd.read_csv(file, usecols=['DATE', 'ID', 'TRANSACTION', 'CATEGORY', 'AMOUNT'])
+        df = pd.read_csv(file)
         
-        # Drop rows with any missing values
-        df = df.dropna(how='any')
+        # Clean and convert the 'Amount' column
+        df['Amount'] = (
+            df['Amount']
+            .replace('[\$,]', '', regex=True)  # Remove dollar signs and commas
+            .replace('[(]', '-', regex=True)   # Replace opening parenthesis with minus
+            .replace('[)]', '', regex=True)    # Remove closing parenthesis
+            .astype(float)                     # Convert to float
+        )
+        
+        # Assuming the second "Account" column should be named 'related_account'
+        df.columns = [
+            'date', 'transaction_type', 'number', 'posting', 'name',
+            'location', 'description', 'account', 'related_account', 'amount'
+        ]
+        
+        # Drop rows where all elements are NaN (or None)
+        df.dropna(how='all', inplace=True)
 
-        # Connect to the SQLite database
-        conn = sqlite3.connect('database/transactions.db')
+        # Drop duplicates based on a subset of columns that should be unique
+        # Adjust the subset list based on your data and requirements
+        df.drop_duplicates(subset=['date', 'transaction_type', 'number', 'name', 'account', 'related_account', 'amount'], inplace=True)
 
-        # Check for existing IDs in the database and remove them from the DataFrame
-        existing_ids = pd.read_sql_query('SELECT ID FROM transactions', conn)
-        df = df[~df['ID'].isin(existing_ids['ID'])]
+        
+        # Connect to the SQLite database and insert data
+        with sqlite3.connect('database/quickbooks.db') as conn:
+            df.to_sql('quickbooks_transactions', conn, if_exists='append', index=False)
 
-        # Write the remaining new data to the 'transactions' table
-        df.to_sql('transactions', conn, if_exists='append', index=False)
-
-        conn.close()
-        flash('File successfully uploaded and data added to the database.', 'success')
-        return redirect(url_for('show_transactions'))
+        flash('File uploaded and data inserted successfully!')
+        return redirect(url_for('view_transactions'))
+    
     return render_template('upload.html', form=form)
+
 
 
 def allowed_file(filename):
@@ -71,85 +87,108 @@ def allowed_file(filename):
 
 # Route to display transactions
 @app.route('/transactions')
-def show_transactions():
-    conn = sqlite3.connect('database/transactions.db')
+def view_transactions():
+    conn = sqlite3.connect('database/quickbooks.db')
+    conn.row_factory = sqlite3.Row  # This will enable column access by name
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM transactions ")
-    transactions = cursor.fetchall()
+    cursor.execute("SELECT * FROM quickbooks_transactions")
+    transactions_data = cursor.fetchall()
+
+   
 
     conn.close()
-    return render_template('transactions.html', transactions=transactions)
+
+    return render_template('transactions.html', transactions=transactions_data)
+
+
+
+
 
 # Route to add a new transaction (example of a form submission)
-@app.route('/add-transaction', methods=['POST'])
+@app.route('/add-transaction', methods=['GET', 'POST'])
 def add_transaction():
     if request.method == 'POST':
+        # Extract data from form submission
         date = request.form['date']
-        transaction = request.form['transaction']
-        category = request.form['category']
-        amount = request.form['amount']
-        # ... get other fields similarly
+        transaction_type = request.form['transaction_type']
+        number = request.form.get('number')  # Optional field
+        posting = request.form['posting']
+        name = request.form['name']
+        location = request.form.get('location')  # Optional field
+        description = request.form['description']
+        account = request.form['account']
+        related_account = request.form.get('related_account')  # Optional field
+        amount = request.form['amount'].replace(',', '').replace('$', '').replace('(', '-').replace(')', '')
 
-        conn = sqlite3.connect('database/transactions.db')
+        # Convert amount to float
+        try:
+            amount = float(amount)
+        except ValueError:
+            flash('Invalid amount format.')
+            return redirect(url_for('add_transaction'))
+
+        # Connect to the database
+        conn = sqlite3.connect('database/quickbooks.db')
         cursor = conn.cursor()
 
-        cursor.execute("""
-            INSERT INTO transactions (date, transaction, category, amount, ...)
-            VALUES (?, ?, ?, ?, ...)
-        """, (date, transaction, category, amount, ...))
+        # Insert the new transaction
+        cursor.execute('''
+            INSERT INTO quickbooks_transactions (
+                date, transaction_type, number, posting, name,
+                location, description, account, related_account, amount
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (date, transaction_type, number, posting, name, location, description, account, related_account, amount))
 
         conn.commit()
         conn.close()
 
-        return redirect(url_for('show_transactions'))
+        flash('New transaction added successfully!')
+        return redirect(url_for('view_transactions'))
+
+    return render_template('transactions.html')
+
 
 # Route to dashboard
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
-    conn = sqlite3.connect('database/transactions.db')
+    conn = sqlite3.connect('database/quickbooks.db')
     cursor = conn.cursor()
 
     # Initialize the base queries for expenses and income
-    base_expense_query = "SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Expense%'"
-    base_income_query = "SELECT * FROM transactions WHERE \"TRANSACTION\" LIKE '%Income%'"
+    base_expense_query = "SELECT * FROM quickbooks_transactions WHERE transaction_type LIKE '%Expense%'"
+    base_income_query = "SELECT * FROM quickbooks_transactions WHERE transaction_type LIKE '%Deposit%'"
 
-    # Initialize totals
+  
+      # Initialize variables
     total_expenses = 0
     total_income = 0
-
     specific_month_selected = False
     selected_month = None
+    expense_query = base_expense_query
+    income_query = base_income_query
 
     if request.method == 'POST':
         month = request.form.get('month')
         year = request.form.get('year')
-        
+        print(f"Month: {month}, Year: {year}")
+
         if 'reset' in request.form:
             # Reset button was pressed; show data for all months
             specific_month_selected = False
-            expense_query = base_expense_query
-            income_query = base_income_query
             selected_month = None
-
-            print(selected_month)
         elif month and year:
             # A specific month is selected
             specific_month_selected = True
             selected_month = month
 
             # Apply filters only for the selected month
-            month_year_filter = f" AND SUBSTR(DATE, 4, 3) = '{month}' AND SUBSTR(DATE, 8, 2) = '{year}'"
-            expense_query = base_expense_query + month_year_filter
-            income_query = base_income_query + month_year_filter
-        else:
-            # No specific month selected, use base queries
-            expense_query = base_expense_query
-            income_query = base_income_query
-    else:
-        # Default case when the page is first loaded
-        expense_query = base_expense_query
-        income_query = base_income_query
+            # Adjust SUBSTR indexes based on your date format, assuming DD/MM/YYYY
+            month_year_filter = f" AND CAST(SUBSTR(date, 4, 2) AS INTEGER) = {month} AND SUBSTR(date, 7, 4) = '{year}'"
+            expense_query += month_year_filter
+            income_query += month_year_filter
+            print(f"Expense Query: {expense_query}")
+            print(f"Income Query: {income_query}")
 
     # Execute the queries for expenses and income
     cursor.execute(expense_query)
@@ -163,15 +202,15 @@ def dashboard():
     expenses_by_month = [0] * 12
     income_by_month = [0] * 12
 
-    # Query to fetch monthly expense and income data
-    months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  # Query to fetch monthly expense and income data
+    months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
     for i, month_str in enumerate(months, start=1):
         # Query for expenses
-        cursor.execute("SELECT SUM(CAST(REPLACE(amount, ',', '') AS REAL)) FROM transactions WHERE \"TRANSACTION\" LIKE '%Expense%' AND SUBSTR(date, 4, 3) = ?", (month_str,))
+        cursor.execute("SELECT SUM(CAST(REPLACE(amount, ',', '') AS REAL)) FROM quickbooks_transactions WHERE transaction_type LIKE '%Expense%' AND SUBSTR(date, 4, 2) = ?", (month_str,))
         expenses_by_month[i-1] = cursor.fetchone()[0] or 0
 
         # Query for income
-        cursor.execute("SELECT SUM(CAST(REPLACE(amount, ',', '') AS REAL)) FROM transactions WHERE \"TRANSACTION\" LIKE '%Income%' AND SUBSTR(date, 4, 3) = ?", (month_str,))
+        cursor.execute("SELECT SUM(CAST(REPLACE(amount, ',', '') AS REAL)) FROM quickbooks_transactions WHERE transaction_type LIKE '%Deposit%' AND SUBSTR(date, 4, 2) = ?", (month_str,))
         income_by_month[i-1] = cursor.fetchone()[0] or 0
 
     conn.close()
@@ -181,9 +220,6 @@ def dashboard():
     total_income = sum(income_by_month)
     profit = total_income - total_expenses
 
-    print(total_expenses)
-    print(total_income)
-
     # Preparing chart data with real values
     chart_data = {
         'months': months,
@@ -191,11 +227,8 @@ def dashboard():
         'income': income_by_month
     }
 
-    return render_template('dashboard.html', expenses=expenses, income=income, chart_data=chart_data, specific_month_selected=specific_month_selected, selected_month=selected_month,total_expenses=total_expenses, 
-                                             total_income=total_income, profit=profit)
+    return render_template('dashboard.html', expenses=expenses, income=income, chart_data=chart_data, specific_month_selected=specific_month_selected, selected_month=selected_month, total_expenses=total_expenses, total_income=total_income, profit=profit)
 
 if __name__ == '__main__':
     app.run(debug=True)
 
-if __name__ == '__main__':
-    app.run(debug=True)
