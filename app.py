@@ -6,6 +6,7 @@ from flask_wtf.file import FileField, FileAllowed, FileRequired
 import pandas as pd
 import sqlite3
 import os
+import calendar
 
 class UploadForm(FlaskForm):
     file = FileField('File', validators=[FileRequired(), FileAllowed(['csv'], 'CSV files only!')])
@@ -150,14 +151,28 @@ def add_transaction():
 
 
 # Route to dashboard
+from datetime import datetime
+
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
     conn = sqlite3.connect('database/quickbooks.db')
     cursor = conn.cursor()
 
-    # Initialize the base queries for expenses and income
-    base_expense_query = "SELECT * FROM quickbooks_transactions WHERE transaction_type LIKE '%Expense%'"
-    base_income_query = "SELECT * FROM quickbooks_transactions WHERE transaction_type LIKE '%Deposit%'"
+      # Initialize variables
+    year_filter = ""
+
+    # Get the current year
+    current_year = str(datetime.now().year)
+
+    # Check if year is posted, otherwise use current year
+    actual_year = request.form.get('year', current_year)
+    if actual_year:
+        year_filter = f" AND SUBSTR(date, 7, 4) = '{actual_year}'"
+
+    # Initialize the base queries with the year filter
+    base_expense_query = f"SELECT * FROM quickbooks_transactions WHERE transaction_type LIKE '%Expense%' {year_filter}"
+    base_income_query = f"SELECT * FROM quickbooks_transactions WHERE transaction_type LIKE '%Deposit%' {year_filter}"
+
 
     # Initialize variables
     total_expenses = 0
@@ -168,9 +183,8 @@ def dashboard():
     expense_query = base_expense_query
     income_query = base_income_query
     aggregated_expenses = []  # For aggregated expenses by Name for a selected month
-
+    aggregated_deposits = []  # Initialize for aggregated deposits
     
-
    
     
     if request.method == 'POST':
@@ -187,6 +201,8 @@ def dashboard():
 
             # Apply filters only for the selected month
             month_year_filter = f" AND SUBSTR(date, 4, 2) = '{month}' AND SUBSTR(date, 7, 4) = '{year}'"
+
+            # Query for aggregated expenses
             aggregate_query = f"""
                 SELECT Name, SUM(CAST(REPLACE(Amount, ',', '') AS REAL)) as TotalAmount
                 FROM quickbooks_transactions
@@ -195,7 +211,18 @@ def dashboard():
             """
             cursor.execute(aggregate_query)
             aggregated_expenses = cursor.fetchall()
-            print(f"aggregate:", aggregated_expenses)
+
+
+            # Query for aggregated deposits
+            aggregate_deposits_query = f"""
+                SELECT Name, SUM(CAST(REPLACE(Amount, ',', '') AS REAL)) as TotalAmount
+                FROM quickbooks_transactions
+                WHERE transaction_type LIKE 'Deposit%' {month_year_filter}
+                GROUP BY Name
+            """
+            cursor.execute(aggregate_deposits_query)
+            aggregated_deposits = cursor.fetchall()
+            
 
             expense_query += month_year_filter
             income_query += month_year_filter
@@ -212,13 +239,30 @@ def dashboard():
 
     # Query to fetch monthly expense and income data
     months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
+    year = request.form.get('year')
     for i, month_str in enumerate(months, start=1):
-        # Query for expenses
-        cursor.execute("SELECT SUM(CAST(REPLACE(amount, ',', '') AS REAL)) FROM quickbooks_transactions WHERE transaction_type LIKE '%Expense%' AND SUBSTR(date, 4, 2) = ?", (month_str,))
+       
+       
+        # Query for expenses dashboard chart
+        cursor.execute("""
+        SELECT SUM(CAST(REPLACE(amount, ',', '') AS REAL))
+        FROM quickbooks_transactions
+        WHERE transaction_type LIKE '%Expense%'
+        AND SUBSTR(date, 4, 2) = ?
+        AND SUBSTR(date, 7, 4) = ?
+        """, (month_str, year))
+
         expenses_by_month[i-1] = cursor.fetchone()[0] or 0
 
-        # Query for income
-        cursor.execute("SELECT SUM(CAST(REPLACE(amount, ',', '') AS REAL)) FROM quickbooks_transactions WHERE transaction_type LIKE '%Deposit%' AND SUBSTR(date, 4, 2) = ?", (month_str,))
+        # Query for income dashboard chart
+        cursor.execute("""
+        SELECT SUM(CAST(REPLACE(amount, ',', '') AS REAL))
+        FROM quickbooks_transactions
+        WHERE transaction_type LIKE '%Deposit%'
+          AND SUBSTR(date, 4, 2) = ?
+          AND SUBSTR(date, 7, 4) = ?
+    """, (month_str, year))
+        
         income_by_month[i-1] = cursor.fetchone()[0] or 0
 
     conn.close()
@@ -232,17 +276,37 @@ def dashboard():
     total_income = sum(income_by_month)
     profit = total_income - total_expenses
 
-    # Preparing chart data with real values
+    # Dashboard chart data with real values
+    # Convert month numbers to names
+    month_names = [calendar.month_name[int(month)] for month in months]
+
     chart_data = {
-        'months': months,
+        'months': month_names,
         'expenses': expenses_by_month,
         'income': income_by_month
     }
 
     labels = [expense[0] for expense in aggregated_expenses]
     data = [expense[1] for expense in aggregated_expenses]
+    DepositLabels = [income[0] for income in aggregated_deposits]
+    DepositData = [income[1] for income in aggregated_deposits]
 
-    return render_template('dashboard.html', expenses=expenses, income=income, chart_data=chart_data, specific_month_selected=specific_month_selected, selected_month=selected_month, total_expenses=total_expenses, total_income=total_income, profit=profit,aggregated_expenses=aggregated_expenses,aggregatedExpensesLabels=labels, aggregatedExpensesData=data)
+    return render_template('dashboard.html', expenses=expenses, 
+                           income=income, 
+                           chart_data=chart_data, 
+                           specific_month_selected=specific_month_selected, 
+                           selected_month=selected_month, 
+                           total_expenses=total_expenses, 
+                           total_income=total_income, 
+                           profit=profit,
+                           aggregated_expenses=aggregated_expenses,
+                           aggregatedExpensesLabels=labels, 
+                           aggregatedExpensesData=data,
+                           aggregated_deposits=aggregated_deposits,
+                           aggregatedDepositsLabels=DepositLabels, 
+                           aggregatedDepositsData=DepositData,
+                           year=year,
+                           actual_year=actual_year)
 
 if __name__ == '__main__':
     app.run(debug=True)

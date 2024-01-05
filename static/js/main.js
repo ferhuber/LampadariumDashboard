@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('totals').style.display = 'none';
         document.getElementById('expenses').style.display = 'none';
         document.getElementById('income').style.display = 'none';
+        document.getElementById('chartContainer').style.display = 'none';
 
         // Initialize the pie chart for aggregated expenses
         var pieCtx = document.getElementById('expensesPieChart').getContext('2d');
@@ -38,10 +39,42 @@ document.addEventListener('DOMContentLoaded', function () {
                 },
             }
         });
+        // Initialize the pie chart for aggregated deposits
+        var pieCtx = document.getElementById('depositsPieChart').getContext('2d');
+        var depositsPieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: aggregatedDepositsLabels, // Array of category names
+                datasets: [{
+                    data: aggregatedDepositsData, // Array of corresponding amounts
+                    backgroundColor: [
+                        // Define colors for each slice
+                        'red', 'blue', 'green', 'yellow', 'purple', 'orange', 'cyan', 'magenta', 'lime', 'pink', 'teal', 'lavender'
+                        // Add more colors if you have more categories
+                    ],
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                title: {
+                    display: true,
+                    text: 'Deposit Breakdown for ' + selectedMonth
+                },
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        // You can also customize other legend properties here
+
+                    }
+                },
+            }
+        });
 
     } else {
         // Display the chart and totals if no specific month is selected
         document.getElementById('myChart').style.display = 'block';
+        document.getElementById('chartContainer').style.display = 'block';
         document.getElementById('totals').style.display = 'block';
 
     }
@@ -80,4 +113,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+    function setFormAction(action) {
+        document.getElementById('formAction').value = action;
+        document.getElementById('dashboardForm').action = action;
+    }
 });
